@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motorcycle Project Mangement</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- html2pdf.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between">
+    <!-- Header -->
+    <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-amber-500 to-orange-600 p-2.5 rounded-xl shadow-lg shadow-orange-500/20">
+                    <i class="fa-solid fa-motorcycle text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                        Modified Motorcycle Management
+                    </h1>
+                    <p class="text-xs text-slate-400">Manajemen & Estimasi Modifikasi Motor</p>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="flex items-center space-x-2">
+                <button onclick="exportToPDF()" class="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-lg text-sm font-medium transition shadow-lg shadow-rose-900/30 flex items-center space-x-2">
+                    <i class="fa-solid fa-file-pdf text-base"></i>
+                    <span>Ekspor ke PDF</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow" id="printableArea">
+        <!-- Printable PDF Header (Only visible on export) -->
+        <div id="pdfHeader" class="hidden mb-6 p-4 border-b-2 border-slate-700 bg-slate-800 text-white rounded-xl">
+            <h2 id="pdfProjectTitle" class="text-2xl font-bold">Project Modifikasi</h2>
+            <p id="pdfDate" class="text-sm text-slate-400 mt-1"></p>
+        </div>
+
+        <!-- Top Stats Banner -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-sm">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 text-sm font-medium">Total Estimasi Biaya</span>
+                    <div class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg"><i class="fa-solid fa-calculator"></i></div>
+                </div>
+                <div class="text-2xl font-bold mt-2 text-white" id="statTotalEstimated">Rp 0</div>
+                <p class="text-xs text-slate-500 mt-1">Seluruh item dalam rencana</p>
+            </div>
+
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-sm">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 text-sm font-medium">Sudah Dibeli</span>
+                    <div class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg"><i class="fa-solid fa-circle-check"></i></div>
+                </div>
+                <div class="text-2xl font-bold mt-2 text-emerald-400" id="statTotalSpent">Rp 0</div>
+                <p class="text-xs text-slate-500 mt-1" id="statPurchasedCount">0 dari 0 item</p>
+            </div>
+
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-sm">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 text-sm font-medium">Sisa Anggaran Perlu</span>
+                    <div class="p-2 bg-amber-500/10 text-amber-400 rounded-lg"><i class="fa-solid fa-hourglass-half"></i></div>
+                </div>
+                <div class="text-2xl font-bold mt-2 text-amber-400" id="statRemaining">Rp 0</div>
+                <p class="text-xs text-slate-500 mt-1">Item yang belum dibeli</p>
+            </div>
+
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 backdrop-blur-sm">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 text-sm font-medium">Progress Proyek</span>
+                    <div class="p-2 bg-orange-500/10 text-orange-400 rounded-lg"><i class="fa-solid fa-chart-line"></i></div>
+                </div>
+                <div class="text-2xl font-bold mt-2 text-white" id="statProgressPercent">0%</div>
+                <div class="w-full bg-slate-700 rounded-full h-2 mt-2">
+                    <div id="statProgressBar" class="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Selector / Controls -->
+        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+            <div class="flex items-center space-x-3">
+                <label for="projectSelect" class="text-sm font-medium text-slate-300 whitespace-nowrap">Project Motor:</label>
+                <select id="projectSelect" onchange="switchProject(this.value)" class="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm flex-grow sm:flex-grow-0 min-w-[200px]">
+                    <!-- Dynamic Projects -->
+                </select>
+                <button onclick="openProjectModal()" class="px-3 py-2.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 rounded-xl transition text-sm flex items-center space-x-1" title="Buat Proyek Baru">
+                    <i class="fa-solid fa-plus text-amber-500"></i>
+                    <span class="hidden sm:inline">Baru</span>
+                </button>
+                <button onclick="deleteCurrentProject()" class="px-3 py-2.5 bg-slate-800 border border-slate-700 hover:bg-rose-900/40 text-rose-400 rounded-xl transition text-sm" title="Hapus Proyek Ini">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+
+            <button onclick="openItemModal()" class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium rounded-xl shadow-lg shadow-orange-500/20 transition flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-plus"></i>
+                <span>Tambah Part Modifikasi</span>
+            </button>
+        </div>
+
+        <!-- Filter and Search -->
+        <div class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-grow">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                <input type="text" id="searchInput" oninput="renderItems()" placeholder="Cari nama barang atau merk..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-slate-500">
+            </div>
+            <div class="flex gap-2">
+                <select id="categoryFilter" onchange="renderItems()" class="bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="ALL">Semua Kategori</option>
+                    <option value="Mesin & Performa">Mesin & Performa</option>
+                    <option value="Kaki-kaki & Suspensi">Kaki-kaki & Suspensi</option>
+                    <option value="Bodi & Estetika">Bodi & Estetika</option>
+                    <option value="Pengereman">Pengereman</option>
+                    <option value="Kelistrikan & Lampu">Kelistrikan & Lampu</option>
+                    <option value="Knalpot">Knalpot</option>
+                    <option value="Aksesoris">Aksesoris</option>
+                    <option value="Lainnya">Lainnya</option>
+                </select>
+                <select id="statusFilter" onchange="renderItems()" class="bg-slate-800 border border-slate-700 text-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="ALL">Semua Status</option>
+                    <option value="PENDING">Belum Dibeli</option>
+                    <option value="BOUGHT">Sudah Dibeli</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Items Table / Grid -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-800 text-slate-400 text-xs font-semibold uppercase tracking-wider border-b border-slate-700">
+                            <th class="p-4 w-12 text-center">Status</th>
+                            <th class="p-4">Barang & Merk</th>
+                            <th class="p-4">Kategori</th>
+                            <th class="p-4 text-right">Estimasi Harga</th>
+                            <th class="p-4 text-center">Link E-Commerce</th>
+                            <th class="p-4 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody" class="divide-y divide-slate-700/50 text-sm">
+                        <!-- Dynamic Item Rows -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden py-16 text-center">
+                <div class="w-16 h-16 bg-slate-700/50 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="fa-solid fa-wrench"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-200">Belum ada daftar barang</h3>
+                <p class="text-slate-400 text-sm max-w-sm mx-auto mt-1">Tambahkan barang modifikasi pertama Anda untuk mulai merencanakan project ini.</p>
+                <button onclick="openItemModal()" class="mt-4 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-xl transition">
+                    + Tambah Barang
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Form Item (Tambah / Edit) -->
+    <div id="itemModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <div class="flex justify-between items-center mb-5 border-b border-slate-700 pb-3">
+                <h3 id="modalTitle" class="text-lg font-bold text-white">Tambah Part Modifikasi</h3>
+                <button onclick="closeItemModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="itemForm" onsubmit="saveItem(event)" class="space-y-4">
+                <input type="hidden" id="itemId">
+                
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nama Barang *</label>
+                    <input type="text" id="itemName" required placeholder="Contoh: Shockbreaker Tabung, Knalpot Fullsystem" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Merk / Brand</label>
+                        <input type="text" id="itemBrand" placeholder="Contoh: Ohlins, RCB, Akrapovic" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Kategori</label>
+                        <select id="itemCategory" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="Mesin & Performa">Mesin & Performa</option>
+                            <option value="Kaki-kaki & Suspensi">Kaki-kaki & Suspensi</option>
+                            <option value="Bodi & Estetika">Bodi & Estetika</option>
+                            <option value="Pengereman">Pengereman</option>
+                            <option value="Kelistrikan & Lampu">Kelistrikan & Lampu</option>
+                            <option value="Knalpot">Knalpot</option>
+                            <option value="Aksesoris">Aksesoris</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Estimasi Harga (Rp) *</label>
+                    <input type="number" id="itemPrice" required min="0" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Link E-Commerce (Shopee/Tokopedia/dll)</label>
+                    <input type="url" id="itemLink" placeholder="https://tokopedia.com/... atau https://shopee.co.id/..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Catatan Tambahan (Opsional)</label>
+                    <textarea id="itemNotes" rows="2" placeholder="Catatan ukuran, warna, atau spesifikasi khusus..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+                </div>
+
+                <div class="pt-3 flex justify-end space-x-3">
+                    <button type="button" onclick="closeItemModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-sm font-medium transition">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium transition">Simpan Barang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Project Baru -->
+    <div id="projectModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <h3 class="text-lg font-bold text-white mb-4">Buat Project Modif Baru</h3>
+            <form onsubmit="createNewProject(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nama Motor / Project *</label>
+                    <input type="text" id="newProjectName" required placeholder="Contoh: RX King Restorasi, Aerox Proper" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeProjectModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-sm font-medium transition">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium transition">Buat Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded-xl border border-slate-700 shadow-2xl flex items-center space-x-3 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none z-50">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage" class="text-sm">Notifikasi</span>
+    </div>
+
+    <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        &copy; MotoMod Planner - Aplikasi Kelola Anggaran Modifikasi Sepeda Motor
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Storage Keys & State
+        const STORAGE_KEY = 'motomod_planner_data';
+        let appData = {
+            activeProjectId: null,
+            projects: []
+        };
+
+        // Initialize App
+        window.onload = function() {
+            loadData();
+            if (appData.projects.length === 0) {
+                // Seed Default Project
+                const defaultId = Date.now().toString();
+                appData.projects.push({
+                    id: defaultId,
+                    name: 'Project Modif Pertama',
+                    items: [
+                        {
+                            id: '1',
+                            name: 'Master Rem Kanan RCA 14mm',
+                            brand: 'RCB',
+                            category: 'Pengereman',
+                            price: 650000,
+                            link: 'https://shopee.co.id',
+                            notes: 'Warna Hitam Oval',
+                            bought: true
+                        },
+                        {
+                            id: '2',
+                            name: 'Shockbreaker Tabung 330mm',
+                            brand: 'KTC Kytaco',
+                            category: 'Kaki-kaki & Suspensi',
+                            price: 1250000,
+                            link: 'https://tokopedia.com',
+                            notes: 'Setel rebound empuk',
+                            bought: false
+                        }
+                    ]
+                });
+                appData.activeProjectId = defaultId;
+                saveData();
+            }
+            renderProjectsDropdown();
+            renderItems();
+        };
+
+        // Local Storage Helpers
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        }
+
+        function loadData() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                try {
+                    appData = JSON.parse(raw);
+                } catch (e) {
+                    console.error('Failed to parse local storage', e);
+                }
+            }
+        }
+
+        // Project Management
+        function getCurrentProject() {
+            return appData.projects.find(p => p.id === appData.activeProjectId) || appData.projects[0];
+        }
+
+        function renderProjectsDropdown() {
+            const select = document.getElementById('projectSelect');
+            select.innerHTML = '';
+            appData.projects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                if (p.id === appData.activeProjectId) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function switchProject(id) {
+            appData.activeProjectId = id;
+            saveData();
+            renderItems();
+        }
+
+        function openProjectModal() {
+            document.getElementById('newProjectName').value = '';
+            document.getElementById('projectModal').classList.remove('hidden');
+        }
+
+        function closeProjectModal() {
+            document.getElementById('projectModal').classList.add('hidden');
+        }
+
+        function createNewProject(e) {
+            e.preventDefault();
+            const name = document.getElementById('newProjectName').value.trim();
+            if (!name) return;
+
+            const newId = Date.now().toString();
+            appData.projects.push({
+                id: newId,
+                name: name,
+                items: []
+            });
+            appData.activeProjectId = newId;
+            saveData();
+            renderProjectsDropdown();
+            renderItems();
+            closeProjectModal();
+            showToast('Project baru berhasil dibuat');
+        }
+
+        function deleteCurrentProject() {
+            if (appData.projects.length <= 1) {
+                showToast('Minimal harus ada 1 project tersisa', 'error');
+                return;
+            }
+
+            const current = getCurrentProject();
+            if (confirm(`Yakin ingin menghapus project "${current.name}" beserta semua daftarnya?`)) {
+                appData.projects = appData.projects.filter(p => p.id !== current.id);
+                appData.activeProjectId = appData.projects[0].id;
+                saveData();
+                renderProjectsDropdown();
+                renderItems();
+                showToast('Project berhasil dihapus');
+            }
+        }
+
+        // Items Management & Render
+        function renderItems() {
+            const project = getCurrentProject();
+            if (!project) return;
+
+            const tbody = document.getElementById('itemsTableBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const categoryVal = document.getElementById('categoryFilter').value;
+            const statusVal = document.getElementById('statusFilter').value;
+
+            const filteredItems = project.items.filter(item => {
+                const matchesSearch = item.name.toLowerCase().includes(searchVal) || 
+                                      (item.brand && item.brand.toLowerCase().includes(searchVal));
+                const matchesCategory = categoryVal === 'ALL' || item.category === categoryVal;
+                const matchesStatus = statusVal === 'ALL' || 
+                                     (statusVal === 'BOUGHT' && item.bought) || 
+                                     (statusVal === 'PENDING' && !item.bought);
+                return matchesSearch && matchesCategory && matchesStatus;
+            });
+
+            if (filteredItems.length === 0) {
+                tbody.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } else {
+                tbody.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+            }
+
+            filteredItems.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-slate-700/30 transition ${item.bought ? 'bg-emerald-950/10' : ''}`;
+
+                const formatPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price);
+
+                tr.innerHTML = `
+                    <td class="p-4 text-center">
+                        <button onclick="toggleBought('${item.id}')" class="text-xl transition focus:outline-none" title="${item.bought ? 'Tandai Belum Dibeli' : 'Tandai Sudah Dibeli'}">
+                            ${item.bought 
+                                ? '<i class="fa-solid fa-circle-check text-emerald-400"></i>' 
+                                : '<i class="fa-regular fa-circle text-slate-500 hover:text-amber-500"></i>'}
+                        </button>
+                    </td>
+                    <td class="p-4">
+                        <div class="font-medium ${item.bought ? 'line-through text-slate-400' : 'text-white'}">${escapeHtml(item.name)}</div>
+                        <div class="text-xs text-slate-400 mt-0.5">${item.brand ? escapeHtml(item.brand) : 'Tanpa Merk'}</div>
+                        ${item.notes ? `<div class="text-xs text-amber-400/80 mt-1"><i class="fa-regular fa-note-sticky mr-1"></i>${escapeHtml(item.notes)}</div>` : ''}
+                    </td>
+                    <td class="p-4">
+                        <span class="inline-block px-2.5 py-1 bg-slate-700/60 border border-slate-600/50 rounded-lg text-xs font-medium text-slate-300">
+                            ${escapeHtml(item.category || 'Lainnya')}
+                        </span>
+                    </td>
+                    <td class="p-4 text-right font-semibold ${item.bought ? 'text-slate-400' : 'text-amber-400'}">
+                        ${formatPrice}
+                    </td>
+                    <td class="p-4 text-center">
+                        ${item.link 
+                            ? `<a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 text-xs px-3 py-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg hover:bg-indigo-500/20 transition">
+                                 <i class="fa-solid fa-cart-shopping"></i>
+                                 <span>Beli</span>
+                               </a>` 
+                            : '<span class="text-xs text-slate-600">-</span>'}
+                    </td>
+                    <td class="p-4 text-center">
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="editItem('${item.id}')" class="p-1.5 text-slate-400 hover:text-amber-400 transition" title="Edit">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteItem('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 transition" title="Hapus">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateStatistics(project);
+        }
+
+        // Stats Calculator
+        function updateStatistics(project) {
+            let totalEstimated = 0;
+            let totalSpent = 0;
+            let boughtCount = 0;
+
+            project.items.forEach(item => {
+                const price = Number(item.price) || 0;
+                totalEstimated += price;
+                if (item.bought) {
+                    totalSpent += price;
+                    boughtCount++;
+                }
+            });
+
+            const remaining = totalEstimated - totalSpent;
+            const progress = project.items.length > 0 ? Math.round((boughtCount / project.items.length) * 100) : 0;
+
+            const formatCurrency = (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
+
+            document.getElementById('statTotalEstimated').textContent = formatCurrency(totalEstimated);
+            document.getElementById('statTotalSpent').textContent = formatCurrency(totalSpent);
+            document.getElementById('statRemaining').textContent = formatCurrency(remaining);
+            document.getElementById('statPurchasedCount').textContent = `${boughtCount} dari ${project.items.length} item`;
+            document.getElementById('statProgressPercent').textContent = `${progress}%`;
+            document.getElementById('statProgressBar').style.width = `${progress}%`;
+        }
+
+        // Item Modal Control
+        function openItemModal(itemId = null) {
+            const modal = document.getElementById('itemModal');
+            const form = document.getElementById('itemForm');
+            form.reset();
+
+            if (itemId) {
+                const project = getCurrentProject();
+                const item = project.items.find(i => i.id === itemId);
+                if (item) {
+                    document.getElementById('modalTitle').textContent = 'Edit Part Modifikasi';
+                    document.getElementById('itemId').value = item.id;
+                    document.getElementById('itemName').value = item.name;
+                    document.getElementById('itemBrand').value = item.brand || '';
+                    document.getElementById('itemCategory').value = item.category || 'Mesin & Performa';
+                    document.getElementById('itemPrice').value = item.price;
+                    document.getElementById('itemLink').value = item.link || '';
+                    document.getElementById('itemNotes').value = item.notes || '';
+                }
+            } else {
+                document.getElementById('modalTitle').textContent = 'Tambah Part Modifikasi';
+                document.getElementById('itemId').value = '';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeItemModal() {
+            document.getElementById('itemModal').classList.add('hidden');
+        }
+
+        function saveItem(e) {
+            e.preventDefault();
+            const project = getCurrentProject();
+            const id = document.getElementById('itemId').value;
+            const name = document.getElementById('itemName').value.trim();
+            const brand = document.getElementById('itemBrand').value.trim();
+            const category = document.getElementById('itemCategory').value;
+            const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+            const link = document.getElementById('itemLink').value.trim();
+            const notes = document.getElementById('itemNotes').value.trim();
+
+            if (!name) return;
+
+            if (id) {
+                // Update Existing
+                const itemIndex = project.items.findIndex(i => i.id === id);
+                if (itemIndex > -1) {
+                    project.items[itemIndex] = {
+                        ...project.items[itemIndex],
+                        name, brand, category, price, link, notes
+                    };
+                }
+                showToast('Barang berhasil diperbarui');
+            } else {
+                // Add New
+                project.items.push({
+                    id: Date.now().toString(),
+                    name,
+                    brand,
+                    category,
+                    price,
+                    link,
+                    notes,
+                    bought: false
+                });
+                showToast('Barang berhasil ditambahkan');
+            }
+
+            saveData();
+            renderItems();
+            closeItemModal();
+        }
+
+        function toggleBought(itemId) {
+            const project = getCurrentProject();
+            const item = project.items.find(i => i.id === itemId);
+            if (item) {
+                item.bought = !item.bought;
+                saveData();
+                renderItems();
+                showToast(item.bought ? 'Ditandai sudah dibeli' : 'Ditandai belum dibeli');
+            }
+        }
+
+        function editItem(itemId) {
+            openItemModal(itemId);
+        }
+
+        function deleteItem(itemId) {
+            const project = getCurrentProject();
+            if (confirm('Apakah Anda yakin ingin menghapus barang ini?')) {
+                project.items = project.items.filter(i => i.id !== itemId);
+                saveData();
+                renderItems();
+                showToast('Barang dihapus');
+            }
+        }
+
+        // Export Project to PDF
+        function exportToPDF() {
+            const project = getCurrentProject();
+            if (!project) return;
+
+            const element = document.getElementById('printableArea');
+            const pdfHeader = document.getElementById('pdfHeader');
+            const pdfProjectTitle = document.getElementById('pdfProjectTitle');
+            const pdfDate = document.getElementById('pdfDate');
+
+            // Setup temporary PDF header details
+            pdfProjectTitle.textContent = `Laporan Modifikasi Motor: ${project.name}`;
+            const today = new Date().toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            pdfDate.textContent = `Tanggal Dicetak: ${today} | Total Barang: ${project.items.length}`;
+
+            // Show PDF header for snapshot
+            pdfHeader.classList.remove('hidden');
+
+            showToast('Membuka dialog unduh PDF...', 'success');
+
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     `Modif_${project.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f172a' },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Generate PDF
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Hide header again after export
+                pdfHeader.classList.add('hidden');
+            }).catch(err => {
+                console.error('PDF Export Error:', err);
+                pdfHeader.classList.add('hidden');
+                showToast('Gagal mengunduh PDF', 'error');
+            });
+        }
+
+        // Toast Helper
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = msg;
+            if (type === 'error') {
+                toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Security Utility
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
